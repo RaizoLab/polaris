@@ -10,12 +10,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  contracts:
-    name: Build Soroban contracts
+  contract-dirs:
+    name: Discover contract directories
     runs-on: ubuntu-latest
+    outputs:
+      dirs: ${{ steps.dirs.outputs.dirs }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: dirs
+        run: |
+          dirs=$(find contracts/contracts -type f -name 'Makefile' -mindepth 2 | xargs dirname | sed 's|^\./||' | jq -Rnc '[inputs | "\(.)"]')
+          echo "dirs=$dirs" >> $GITHUB_OUTPUT
+
+  contracts:
+    name: Build ${{ matrix.contract }}
+    needs: contract-dirs
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        contract: ${{ fromJSON(needs.contract-dirs.outputs.dirs) }}
     defaults:
       run:
-        working-directory: contracts/contracts/vault
+        working-directory: ${{ matrix.contract }}
     steps:
       - uses: actions/checkout@v4
 
