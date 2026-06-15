@@ -151,6 +151,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "auth"
+version = "0.0.0"
+dependencies = [
+ "soroban-sdk",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1558,6 +1565,7 @@ checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
 name = "vault"
 version = "0.0.0"
 dependencies = [
+ "auth",
  "mock-pool",
  "soroban-sdk",
 ]

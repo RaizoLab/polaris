@@ -58,6 +58,39 @@ impl MockPool {
             .publish((symbol_short!("pool_dep"), pool_addr), amount);
     }
 
+    /// Withdraw liquidity to `to`. Tokens are transferred from this pool.
+    pub fn withdraw(env: Env, to: Address, amount: i128) {
+        if amount <= 0 {
+            panic!("amount must be positive");
+        }
+
+        let token_addr: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Token)
+            .expect("not initialized");
+        let pool_addr = env.current_contract_address();
+
+        let total: i128 = env
+            .storage()
+            .instance()
+            .get(&DataKey::TotalLiquidity)
+            .unwrap_or(0);
+        if total < amount {
+            panic!("insufficient pool liquidity");
+        }
+
+        let token_client = token::Client::new(&env, &token_addr);
+        token_client.transfer(&pool_addr, &to, &amount);
+
+        env.storage()
+            .instance()
+            .set(&DataKey::TotalLiquidity, &(total - amount));
+
+        env.events()
+            .publish((symbol_short!("pool_wd"), pool_addr), amount);
+    }
+
     pub fn total_liquidity(env: Env) -> i128 {
         env.storage()
             .instance()

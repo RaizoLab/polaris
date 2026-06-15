@@ -1,43 +1,35 @@
 # Soroban Contracts
 
-Polaris on-chain smart contracts for vaults and permissions.
+Polaris on-chain smart contracts for vaults, permissions, and SAC interoperability.
 
 ## Project Structure
 
 ```text
 contracts/
 ├── contracts/
-│   ├── vault/          # Core vault: user deposits, withdrawals, agent pool routing
-│   └── mock-pool/      # Mock liquidity pool for agent integration testing
-├── Cargo.toml          # Workspace manifest
+│   ├── auth/           # Non-custodial agent delegation + protocol whitelist
+│   ├── vault/          # Core vault: SAC deposits, withdrawals, agent rebalance
+│   └── mock-pool/      # Mock liquidity pool for integration testing
+├── Cargo.toml
 └── README.md
 ```
 
+## Auth Contract
+
+- `authorize` / `revoke` — User grants or revokes agent delegation (single-tx revoke)
+- `add_protocol` / `remove_protocol` — Admin whitelists DeFi protocols
+- `require_agent` — Enforces Soroban `require_auth` for the delegated agent
+
 ## Vault Contract
 
-The vault contract provides:
+- Multi-token SAC `deposit` / `withdraw` with persistent balances
+- `agent_deposit_to_pool` — Agent moves liquidity into whitelisted pools
+- `rebalance` — Agent moves liquidity between whitelisted pools without user interaction
 
-- **`deposit`** — Users deposit tokens; balances stored in `env.storage().persistent()`
-- **`withdraw`** — Users withdraw up to their recorded balance
-- **`agent_deposit_to_pool`** — Delegated agent moves vault liquidity into the mock pool
-- **Events** — `deposit`, `withdraw`, and `agent_dep` events for off-chain indexing
-
-## Build
+## Build & Test
 
 ```bash
-cd contracts/vault
-make build
-
-cd ../mock-pool
-make build
-```
-
-## Test
-
-```bash
-cd contracts/vault
-make test
-
-cd ../mock-pool
-make test
+cd contracts/auth && make test
+cd ../vault && make test
+cd ../mock-pool && make test
 ```
