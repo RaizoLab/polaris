@@ -1,5 +1,5 @@
 [package]
-name = "vault"
+name = "blend-adapter"
 version = "0.0.0"
 edition = "2021"
 publish = false
@@ -13,9 +13,4 @@ soroban-sdk = { workspace = true }
 
 [dev-dependencies]
 soroban-sdk = { workspace = true, features = ["testutils"] }
-auth = { path = "../auth" }
-mock-pool = { path = "../mock-pool" }
-blend-adapter = { path = "../blend-adapter" }
 mock-blend-pool = { path = "../mock-blend-pool" }
-phoenix-adapter = { path = "../phoenix-adapter" }
-mock-phoenix-pool = { path = "../mock-phoenix-pool" }

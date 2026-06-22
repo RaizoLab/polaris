@@ -9,6 +9,27 @@ pub enum DataKey {
     Balance(Address, Address),
     Auth,
     PoolDeposited(Address),
+    BlendSupplied(Address),
+}
+
+#[contractclient(name = "BlendAdapterClient")]
+pub trait BlendAdapterInterface {
+    fn supply(env: Env, asset: Address, amount: i128);
+    fn supplied(env: Env, asset: Address) -> i128;
+    fn blend_supply_balance(env: Env, asset: Address) -> i128;
+}
+
+#[contractclient(name = "PhoenixAdapterClient")]
+pub trait PhoenixAdapterInterface {
+    fn swap(
+        env: Env,
+        pool: Address,
+        offer_asset: Address,
+        ask_asset: Address,
+        offer_amount: i128,
+        min_ask_amount: i128,
+        max_spread_bps: u32,
+    ) -> i128;
 }
 
 #[contractclient(name = "AuthClient")]
@@ -185,6 +206,89 @@ impl Vault {
         );
     }
 
+    /// Agent supplies vault USDC (or any SAC) to Blend via the blend adapter.
+    pub fn agent_supply_to_blend(env: Env, blend_adapter: Address, token: Address, amount: i128) {
+        if amount <= 0 {
+            panic!("amount must be positive");
+        }
+
+        let auth = Self::auth_client(&env);
+        let agent = auth.agent();
+        agent.require_auth();
+        auth.assert_is_agent(&agent);
+        if !auth.is_protocol_whitelisted(&blend_adapter) {
+            panic!("protocol not whitelisted");
+        }
+
+        let vault_addr = env.current_contract_address();
+        let token_client = token::Client::new(&env, &token);
+        if token_client.balance(&vault_addr) < amount {
+            panic!("insufficient vault liquidity");
+        }
+
+        token_client.transfer(&vault_addr, &blend_adapter, &amount);
+        BlendAdapterClient::new(&env, &blend_adapter).supply(&token, &amount);
+
+        let key = DataKey::BlendSupplied(blend_adapter.clone());
+        let supplied: i128 = env.storage().instance().get(&key).unwrap_or(0);
+        env.storage()
+            .instance()
+            .set(&key, &(supplied + amount));
+
+        env.events()
+            .publish((symbol_short!("blend_sup"), agent, token), amount);
+    }
+
+    /// Agent swaps stablecoins on Phoenix with slippage protection.
+    pub fn agent_swap_phoenix(
+        env: Env,
+        phoenix_adapter: Address,
+        pool: Address,
+        offer_asset: Address,
+        ask_asset: Address,
+        offer_amount: i128,
+        min_ask_amount: i128,
+        max_spread_bps: u32,
+    ) -> i128 {
+        if offer_amount <= 0 || min_ask_amount <= 0 {
+            panic!("amounts must be positive");
+        }
+
+        let auth = Self::auth_client(&env);
+        let agent = auth.agent();
+        agent.require_auth();
+        auth.assert_is_agent(&agent);
+        if !auth.is_protocol_whitelisted(&phoenix_adapter)
+            || !auth.is_protocol_whitelisted(&pool)
+        {
+            panic!("protocol not whitelisted");
+        }
+
+        let vault_addr = env.current_contract_address();
+        token::Client::new(&env, &offer_asset).transfer(&vault_addr, &phoenix_adapter, &offer_amount);
+
+        let ask_amount = PhoenixAdapterClient::new(&env, &phoenix_adapter).swap(
+            &pool,
+            &offer_asset,
+            &ask_asset,
+            &offer_amount,
+            &min_ask_amount,
+            &max_spread_bps,
+        );
+
+        env.events().publish(
+            (symbol_short!("phx_swap"), agent, offer_asset, ask_asset),
+            ask_amount,
+        );
+
+        ask_amount
+    }
+
+    pub fn blend_supplied(env: Env, blend_adapter: Address) -> i128 {
+        let key = DataKey::BlendSupplied(blend_adapter);
+        env.storage().instance().get(&key).unwrap_or(0)
+    }
+
     pub fn pool_deposited(env: Env, pool: Address) -> i128 {
         let key = DataKey::PoolDeposited(pool);
         env.storage().instance().get(&key).unwrap_or(0)
@@ -213,6 +317,8 @@ impl Vault {
 }
 
 mod sac;
+#[cfg(test)]
+mod adapter_tests;
 #[cfg(test)]
 mod sac_integration;
 mod test;
