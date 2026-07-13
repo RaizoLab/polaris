@@ -52,9 +52,36 @@ Polaris acts as a "Smart Copilot" for your stablecoins. It continuously monitors
     npm install
     pip install -r requirements.txt
     python main.py status
-    python main.py hello   # sign + submit Hello World payment
-    python main.py yields  # Blend / Phoenix / Soroswap APYs
+    python main.py hello     # sign + submit Hello World payment
+    python main.py yields    # Blend / Phoenix / Soroswap APYs
+    python main.py forecast  # 24h ML yield forecast + Optimal Allocation
+    python main.py mcp       # start the Polaris MCP server (stdio)
     ```
+
+### MCP Server (LLM access to vault state)
+
+The agent ships an [MCP](https://modelcontextprotocol.io) server so LLM clients (Claude Desktop, Cursor, etc.) can query Polaris directly. Register it with:
+
+```json
+{
+  "mcpServers": {
+    "polaris": {
+      "command": "python",
+      "args": ["/path/to/polaris/agent/mcp_server.py"]
+    }
+  }
+}
+```
+
+Exposed tools:
+* `vault_yield` — answers "What is the current yield in my vault?" (blended APY + per-position breakdown)
+* `market_scan` — ranks yield opportunities across Blend, Phoenix, and Soroswap
+* `rebalance_check` — compares the current allocation to the model-optimal one and recommends hold/rebalance
+* `forecast_yields` — 24h ML yield forecast and the Optimal Allocation array
+
+### Yield Forecasting Model
+
+`agent/ml/` contains a volatility-aware forecaster: next-24h APY per pool is a mean-reversion blend of the latest rate and the trailing mean, weighted by realized volatility, and `optimal_allocation` converts forecasts into capped, risk-adjusted portfolio weights. Accuracy is verified by a walk-forward backtest against the historical pool-rate dataset in `agent/data/` (`python -m ml.backtest`), which must beat the persistence baseline in CI.
 
 ## 🤝 Contributing
 Polaris is a community-driven project! We are looking for contributors in the following areas:

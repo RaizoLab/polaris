@@ -37,14 +37,34 @@ def run_yields(network: str | None) -> int:
     return 0
 
 
+def run_forecast() -> int:
+    from mcp_tools import forecast_yields
+
+    print(json.dumps(forecast_yields(), indent=2))
+    return 0
+
+
+def run_mcp_server() -> int:
+    try:
+        from mcp_server import mcp
+    except ImportError:
+        print(
+            json.dumps({"ok": False, "error": "mcp package not installed. Run: pip install -r requirements.txt"}),
+            file=sys.stderr,
+        )
+        return 1
+    mcp.run()
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Polaris agent engine")
     parser.add_argument(
         "command",
         nargs="?",
         default="status",
-        choices=["status", "hello", "yields"],
-        help="status | hello | yields",
+        choices=["status", "hello", "yields", "forecast", "mcp"],
+        help="status | hello | yields | forecast | mcp",
     )
     parser.add_argument("--network", default=None, help="testnet|mainnet (yields)")
     args = parser.parse_args(argv)
@@ -55,7 +75,7 @@ def main(argv: list[str] | None = None) -> int:
                 {
                     "ok": True,
                     "agent": "polaris",
-                    "commands": ["status", "hello", "yields"],
+                    "commands": ["status", "hello", "yields", "forecast", "mcp"],
                     "hint": "Copy agent/.env.example to agent/.env, fund a testnet key, then run: python main.py hello",
                 },
                 indent=2,
@@ -66,6 +86,10 @@ def main(argv: list[str] | None = None) -> int:
         return run_hello_world()
     if args.command == "yields":
         return run_yields(args.network)
+    if args.command == "forecast":
+        return run_forecast()
+    if args.command == "mcp":
+        return run_mcp_server()
     return 1
 
 
