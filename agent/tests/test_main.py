@@ -1,7 +1,10 @@
 from main import main
 
 
-def test_main_runs_without_error(capsys) -> None:
-    main()
+def test_main_status(capsys) -> None:
+    code = main(["status"])
+    assert code == 0
     captured = capsys.readouterr()
-    assert "Polaris agent" in captured.out
+    payload = captured.out
+    assert "polaris" in payload
+    assert "hello" in payload

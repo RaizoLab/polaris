@@ -5,5 +5,15 @@ __pycache__/
 .venv/
 venv/
 
+# Node / TypeScript
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Secrets
+.env
+.env.local
+
 # Rust / Soroban (also covered by contracts/.gitignore)
 target/
+

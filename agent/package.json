@@ -1,0 +1,27 @@
+{
+  "name": "@polaris/agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Polaris off-chain agent — Stellar AI Agent Kit integration",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node --import tsx src/index.ts",
+    "hello": "node --import tsx src/helloWorld.ts",
+    "test": "node --import tsx --test test/**/*.test.ts"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@blend-capital/blend-sdk": "^3.2.0",
+    "@stellar/stellar-sdk": "^14.0.0",
+    "dotenv": "^16.4.7",
+    "stellar-agent-kit": "^1.0.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

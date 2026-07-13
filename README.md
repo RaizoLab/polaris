@@ -48,8 +48,12 @@ Polaris acts as a "Smart Copilot" for your stablecoins. It continuously monitors
 3.  **Run the agent locally:**
     ```bash
     cd ../agent
+    cp .env.example .env   # set STELLAR_SECRET_KEY (testnet)
+    npm install
     pip install -r requirements.txt
-    python main.py
+    python main.py status
+    python main.py hello   # sign + submit Hello World payment
+    python main.py yields  # Blend / Phoenix / Soroswap APYs
     ```
 
 ## 🤝 Contributing
