@@ -79,6 +79,21 @@ Exposed tools:
 * `rebalance_check` — compares the current allocation to the model-optimal one and recommends hold/rebalance
 * `forecast_yields` — 24h ML yield forecast and the Optimal Allocation array
 
+### Transaction Relayer & Dynamic Fee Manager
+
+`agent/src/relayer/` is the execution engine: a background service that listens for Brain signals and submits rebalancing transactions to Soroban.
+
+```bash
+cd agent
+echo '{"contractId":"C...VAULT","method":"rebalance"}' | npm run relayer
+```
+
+Signals arrive as JSON lines on stdin (`{"contractId", "method", "id?"}`); relay results are emitted as JSON lines on stdout. Each signal goes through: fresh sequence number → dynamic fee bid → simulation → resource-fee padding → sign → submit → status polling via Soroban RPC (`getTransaction`). Transient failures (RPC backpressure, timeouts, network errors) retry with exponential backoff and jitter; deterministic failures (simulation errors, on-chain FAILED) abort immediately.
+
+Fees are managed dynamically by `FeeManager`:
+* **Inclusion fee** — bids at a live congestion percentile from `getFeeStats` (p70, escalating to p90/p99 on retries), clamped between the network base fee and a hard cap.
+* **Resource fee** — every attempt re-simulates against current ledger state and pads the minimum resource fee by 15%, preventing out-of-gas errors during complex rebalances.
+
 ### Yield Forecasting Model
 
 `agent/ml/` contains a volatility-aware forecaster: next-24h APY per pool is a mean-reversion blend of the latest rate and the trailing mean, weighted by realized volatility, and `optimal_allocation` converts forecasts into capped, risk-adjusted portfolio weights. Accuracy is verified by a walk-forward backtest against the historical pool-rate dataset in `agent/data/` (`python -m ml.backtest`), which must beat the persistence baseline in CI.
