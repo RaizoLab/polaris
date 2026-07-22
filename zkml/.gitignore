@@ -1,0 +1,9 @@
+# Derived / heavy setup artifacts (regenerate with npm run setup).
+# The prover only needs strategy.wasm + strategy_final.zkey + verification_key.json,
+# which are committed so CI and provers don't need the circom compiler.
+build/*
+!build/strategy_final.zkey
+!build/verification_key.json
+!build/strategy_js/
+build/strategy_js/*
+!build/strategy_js/strategy.wasm

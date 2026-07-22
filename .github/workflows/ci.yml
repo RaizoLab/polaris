@@ -74,6 +74,27 @@ jobs:
       - name: Run tests
         run: pytest
 
+  zkml:
+    name: ZK prover tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: zkml
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: zkml/package-lock.json
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Run prover tests
+        run: npm test
+
   agent-ts:
     name: Build TypeScript agent
     runs-on: ubuntu-latest

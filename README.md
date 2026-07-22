@@ -79,6 +79,23 @@ Exposed tools:
 * `rebalance_check` — compares the current allocation to the model-optimal one and recommends hold/rebalance
 * `forecast_yields` — 24h ML yield forecast and the Optimal Allocation array
 
+### ZKML: Verifiable Strategy Proofs
+
+`zkml/` proves — with a Groth16 zero-knowledge proof — that a trade emitted by the agent followed the open-source strategy, and `contracts/contracts/zk-verifier` checks that proof on-chain before a rebalance is allowed.
+
+```bash
+cd zkml
+npm install
+npm run prove              # -> build/strategy.proof + build/public.json
+npm run export             # -> Soroban-encoded VK + proof bytes
+```
+
+The circuit (`circuits/strategy.circom`, compiled over BLS12-381) constrains two rules: the chosen target protocol must have the maximum model-scored APY among the candidates, and the trade amount must respect the 60% max-allocation cap. The public signals include the intended target protocol index and the trade amount, so the verifier binds the proof to the exact trade. Rebuilding the circuit needs the `circom` compiler (`npm run setup`); proving only needs the committed `build/` artifacts.
+
+The on-chain verifier is a Rust Soroban contract using the protocol-22 BLS12-381 host functions (one multi-scalar multiplication plus a single 4-way pairing check; alpha/gamma/delta are pre-negated off-chain). It returns `true` for valid proofs, `false` for invalid ones, and verification costs ~52M CPU instructions — comfortably inside the 100M Soroban transaction budget (asserted in its test suite).
+
+> The trusted setup in `scripts/setup.sh` is a single-contributor dev ceremony. Run a proper multi-party ceremony before mainnet.
+
 ### Transaction Relayer & Dynamic Fee Manager
 
 `agent/src/relayer/` is the execution engine: a background service that listens for Brain signals and submits rebalancing transactions to Soroban.

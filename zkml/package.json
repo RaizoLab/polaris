@@ -1,0 +1,20 @@
+{
+  "name": "@polaris/zkml",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Polaris ZKML — Groth16 proofs that the agent's trades follow the open-source strategy",
+  "scripts": {
+    "setup": "bash scripts/setup.sh",
+    "prove": "node scripts/prove.js",
+    "export": "node scripts/export_soroban.js",
+    "test": "node --test --test-force-exit test/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "circomlib": "^2.0.5",
+    "snarkjs": "^0.7.5"
+  }
+}
